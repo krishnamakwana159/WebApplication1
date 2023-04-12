@@ -1,0 +1,263 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+<style>
+    /* REMOVING ARROW FROM INPUT TYPE NUMBER  */
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    table {
+        border: 0.5px solid black;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th {
+        background-color: rgb(109, 109, 109);
+        color: white;
+    }
+
+    th,
+    td {
+        border: 0.5px solid black;
+        border-collapse: collapse;
+        padding: 8px;
+        text-align: left;
+        width: fit-content;
+    }
+
+    input {
+        border: none;
+        background-color: rgb(225, 255, 255);
+        padding: 8px;
+        width: inherit;
+    }
+
+    h2 {
+        text-align: center;
+        color: rgb(255, 84, 84);
+    }
+</style>
+<h2 id="error"></h2>
+<table id="tblEmpAvailabiliy" class="table table-hover">
+    <!--<thead style="border: 1px solid black;">
+        <tr class="gridHead">
+            <th class="" style="cursor:pointer;font-size:12px;width:10%">RH Name</th>
+            <th class="" style="cursor:pointer;font-size:12px;width:10%">Employee Name</th>
+            <th class="" style="cursor: pointer; font-size: 12px; width: 5%" title="Relevent Exp.">Rel. Exp.</th>
+            <th class="" style="cursor: pointer; font-size: 12px; width: 6%" title="Designation">Designation </th>
+            <th class="" style="cursor:pointer;font-size:12px;width:5%" title="Operation Unit">OU</th>
+            <th class="" style="cursor: pointer; font-size: 12px; width: 5%" title="Comment"> Comment </th>
+            <th class="" style="text-align: center; cursor: pointer; font-size: 12px; width: 4%" title="Approved Hrs"> APH </th>
+            <th class="" style="text-align: center; cursor: pointer; font-size: 12px; width: 4%" title="ResponsibileManager"> RM </th>
+            <th class="" style="cursor: pointer; font-size: 12px; width: 16%">Remarks</th>
+            <th class="" style="cursor: pointer; font-size: 12px; width: 6%">Updated By</th>-->
+    @*<th class="" style="cursor: pointer; font-size: 12px; width: 5%">Add Hours</th>  Work Approval%   *@
+    <!--<th class="" style="cursor: pointer; font-size: 12px; width: 5%">Save</th>
+
+        </tr>
+    </thead>
+    <tbody id="tblSrcData" style="border-bottom: 1px solid #ddd;border-right: 1px solid #ddd;border-left: 1px solid #ddd;">-->
+    @*<tr>
+            <td colspan="14">No Record Found</td>
+        </tr>*@
+    <!--</tbody>-->
+</table>
+
+
+<script type="text/javascript">
+    var finalJSON = [];
+    let months = [];
+    var employeeKeys;
+    $(document).ready(function(){
+        debugger
+        setString("Employee Availability")
+
+        // get all months in data
+        months.push(new Date().getMonth() + 1);
+        for (let i = 0; i < 5; i++) {
+            months.push(months[i] + 1)
+        }
+        console.log(months);
+        getAvailabilityData()
+
+    });
+
+    function getAvailabilityData() {
+        debugger
+        console.log("inside func")
+        $.ajax({
+            url: '@Url.Action("GetAvailaibilityData", "EmployeeAvailability")',
+            dataType: "json",
+            success: function (response) {
+                debugger
+                console.log(response)
+                finalJSON = JSON.parse(response);
+                console.log(finalJSON)
+
+                let table = document.getElementById("tblEmpAvailabiliy");
+                let str = ``;
+                employeeKeys = Object.keys(finalJSON[0]);
+                let employeeDisplayKeys = employeeKeys.filter(
+                    (e) => !["EmployeeID", "EmployeeObjectID", "ReportingHead", "StatusId", "Level"].includes(e)
+                );
+
+                let display = [
+                    "Reporting Head",
+                    "Employee Name",
+                    "Emp Code",
+                    "Relevant Exp",
+                    "Designation",
+                    "OU",
+                ];
+
+                str += `<tr>`;
+                for (const i in employeeDisplayKeys) {
+                    if (employeeDisplayKeys[i] !== "Availability") {
+                        str += `<th><span title='${employeeDisplayKeys[i]}'>${display[i]}</span></th>`;
+                    }
+                    //else {
+                    //    for (const m of months) {
+                    //        str +=
+                    //            m - 1 === new Date().getMonth()
+                    //                ? `<th style="width: 60px;">${getM(m - 1)} (Current) </th>`
+                    //                : `<th style="width: 60px;">${getM(m - 1)}</th>`;
+                    //    }
+                    //}
+                }
+                for (const m of months) {
+                    str +=
+                        m - 1 === new Date().getMonth()
+                            ? `<th style="width: 90px;">${getM(m - 1)} (Current) </th>`
+                            : `<th style="width: 60px;">${getM(m - 1)}</th>`;
+                }
+                str += `<th></th>`;
+                str += `</tr>`;
+
+                //// TABLE HEADER
+
+                //str += `<tr>
+                //    <th>EmpCode</th>
+                //    <th>Name of Person</th>
+                //    <th>Rel Experience</th>
+                //    <th>Percentage Available</th>`;
+
+                //for (const m of months) {
+                //    str += m - 1 === new Date().getMonth() ? `<th style="width: 60px;">${getM(m - 1)} (Current) </th>` : `<th style="width: 60px;">${getM(m - 1)}</th>`;
+                //}
+                //str += `<th></th>`;
+                //str += `</tr>`;
+
+
+                // Arrange monthwise percentege
+
+                finalJSON.forEach((emp) => {
+                    let ky = employeeKeys[0];
+                    str += `<tr>`;
+                    let temp = {};
+                    employeeDisplayKeys.forEach((ek) => {
+                        if (Array.isArray(emp[`${ek}`])) {
+                            emp[`${ek}`].forEach((element) => {
+                                temp[element.Month] = element.AvailabilityPercentage;
+                            });
+                        } else {
+                            if (ek !== "Availability") {
+                                str += emp[ek] ? `<td>${emp[ek]}</td>` : `<td>0</td>`;
+                            }
+                        }
+                    });
+                    for (const m of months) {
+                        str += Object.keys(temp).includes(`${m}`)
+                            ? `<td style="width: 60px; text-align: center;">
+                        <input class="inp" type="number" id="${emp[ky]}${m}" value="${temp[m]}">
+                        </td>`
+                            : `<td style="width: 60px; text-align: center;">
+                        <input type="number" id="${emp[ky]}${m}" value="">
+                        </td>`;
+                    }
+                    str += `<td style="width: 60px; text-align: center;">
+                    <input class="inp" type="button" id="${emp[ky]}" onclick="createObj(${emp[ky]})" value="Save" style="cursor:pointer;">
+                    </td>`;
+                    str += `</tr>`;
+                });
+
+                table.innerHTML = str;
+
+            }
+        });
+
+    }
+
+
+    function createObj(id) {
+        debugger
+
+      document.getElementById("error").innerHTML=""
+        let updateEmp = finalJSON.filter((ele) => ele[employeeKeys[0]] === id)[0];
+      let obj = {};
+      let Availability = [];
+      let currMonth = new Date().getMonth() + 1;
+      let currYear = new Date().getFullYear();
+      let errFlag=false
+      for (let i = currMonth; i < currMonth + 6; i++) {
+        let ele = document.getElementById(`${id}${i}`);
+        let perc = ele.value;
+        if (perc < 0 || isNaN(perc) || perc > 100) {
+          errFlag=true
+          document.getElementById("error").innerHTML="Percentage must be between 0 and 100."
+          const RemoveErr=setTimeout(removeError,2500);
+        } else {
+          ele.style.background = "rgb(225, 255, 255)";
+          if (perc !== "") {
+            let tempObj = {};
+            tempObj.Month = i;
+            tempObj.Year = currYear;
+            tempObj.AvailabilityPercentage = perc;
+            Availability.push(tempObj);
+          }
+        }
+      }
+      if(errFlag){
+        console.log(false);
+        return false;
+      }
+      obj.EmployeeObjectID = updateEmp.EmployeeObjectID;
+      obj.Availability = Availability;
+      if (obj.Availability.length === 0) {
+        document.getElementById("error").innerHTML="Kindly Enter atleast one value to save."
+        const RemoveErr=setTimeout(removeError,2500);
+        console.log(false);
+        return false;
+      } else {
+        console.log(obj);
+        return obj;
+      }
+    }
+
+
+    let getM = (i) => {
+        let d = new Date();
+        d.setMonth(i);
+
+        return (
+            d.toLocaleString("en-US", { month: "short" }) +
+            "-" +
+            d.toLocaleString("en-US", { year: "2-digit" })
+        );
+    };
+
+    // MESSAGE REMOVER
+    function removeError() {
+        document.getElementById("error").innerHTML = "";
+    }
+
+</script>
